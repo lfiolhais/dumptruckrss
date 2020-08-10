@@ -4,8 +4,9 @@ extern crate log;
 use clap::{
     crate_authors, crate_description, crate_name, crate_version, App, Arg, ArgGroup, SubCommand,
 };
+use dumptruckrss::config::DumpConfig;
 use dumptruckrss::error::RssDumpError;
-use dumptruckrss::feed::{DumpConfig, Feed};
+use dumptruckrss::feed::Feed;
 use dumptruckrss::query::{Query, QueryOp, RANGE_DELIMITER};
 use rss::Channel;
 use std::io::BufReader;
