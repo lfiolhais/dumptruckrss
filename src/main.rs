@@ -147,11 +147,8 @@ async fn main() -> Result<(), Box<RssDumpError>> {
         let queries = vec![query];
         queries.into_iter().map(|q| q.build_query_op()).collect()
     } else {
-        println!(
-            "No query provided. Selecting all items in feed which don't exist in {}",
-            config.get_output_display()
-        );
-        let query = Query::new("notexists")?;
+        println!("No query provided. Selecting latest item in feed");
+        let query = Query::new("latest")?;
         vec![query]
             .into_iter()
             .map(|q| q.build_query_op())
