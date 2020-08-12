@@ -5,11 +5,11 @@ use super::query::QueryOp;
 use super::utils::create_file_path;
 use futures::stream::{self, StreamExt, TryStreamExt};
 use pbr::ProgressBar;
+use rayon::prelude::*;
 use std::boxed::Box;
 use std::path::{Path, PathBuf};
-use std::rc::{Rc, Weak};
 use std::str::FromStr;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, Weak};
 use tokio::fs::File;
 use tokio::io as tokio_io;
 use tokio_util::compat::FuturesAsyncReadCompatExt;
@@ -17,7 +17,7 @@ use tokio_util::compat::FuturesAsyncReadCompatExt;
 #[derive(Debug)]
 pub struct Feed<'config> {
     title: String,
-    full_download_list: Vec<(Rc<rss::Item>, u64)>,
+    full_download_list: Vec<(Arc<rss::Item>, u64)>,
     total_size: u64,
     config: &'config DumpConfig<'config>,
 }
@@ -59,7 +59,7 @@ impl<'config> Feed<'config> {
                 .items()
                 .iter()
                 .zip(sizes_vec)
-                .map(|(item, (_, size))| (Rc::new(item.clone()), size))
+                .map(|(item, (_, size))| (Arc::new(item.clone()), size))
                 .collect(),
             total_size,
             config,
@@ -78,24 +78,22 @@ impl<'config> Feed<'config> {
         Ok(length)
     }
 
-    pub async fn build_download_list<'a>(
+    pub fn build_list_from_query<'a>(
         &mut self,
         queries: &[QueryOp<'a>],
     ) -> Result<Vec<(Weak<rss::Item>, u64)>, Box<RssDumpError>> {
-        let mut download_list = vec![];
-
-        for (i, (item, size)) in self.full_download_list.iter().enumerate() {
-            if queries
-                .iter()
-                .map(|func| func((item, i, self)))
-                .fold(true, |res, query_result| res & query_result)
-            {
-                info!("Download List: Adding {:?}", item);
-                download_list.push((Rc::downgrade(&item), *size));
-            }
-        }
-
-        Ok(download_list)
+        Ok(self
+            .full_download_list
+            .par_iter()
+            .enumerate()
+            .filter(|(i, (item, _))| {
+                queries
+                    .iter()
+                    .map(|func| func((item, *i, self)))
+                    .fold(true, |res, query_result| res & query_result)
+            })
+            .map(|(_, (item, size))| (Arc::downgrade(&item), *size))
+            .collect())
     }
 
     pub async fn download_items(

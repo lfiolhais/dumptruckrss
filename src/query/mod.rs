@@ -10,7 +10,7 @@ pub mod rangeset;
 use self::error::*;
 use self::options::*;
 
-pub type QueryOp<'a> = Box<dyn Fn((&Item, usize, &Feed)) -> bool + 'a>;
+pub type QueryOp<'a> = Box<dyn Fn((&Item, usize, &Feed)) -> bool + 'a + Send + Sync>;
 pub const RANGE_DELIMITER: char = ':';
 
 #[derive(Debug)]

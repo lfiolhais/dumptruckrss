@@ -186,7 +186,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             )));
         }
 
-        let download_list = feed.build_download_list(&query_ops).await?;
+        let download_list = feed.build_list_from_query(&query_ops)?;
 
         // Check available space
         let available_space_in_output = fs2::available_space(config.get_output())?;
@@ -224,7 +224,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 fs::remove_file(item_to_delete).await?;
             }
 
-            feed.build_download_list(&query_ops).await?;
+            feed.build_list_from_query(&query_ops)?;
             loops += 1;
 
             if failed_items.is_empty() || loops >= 10 {
@@ -242,7 +242,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
 
     // Check Subcommand
     if matches.subcommand_matches("check").is_some() {
-        let download_list = feed.build_download_list(&query_ops).await?;
+        let download_list = feed.build_list_from_query(&query_ops)?;
 
         if !download_list.is_empty() {
             println!(
