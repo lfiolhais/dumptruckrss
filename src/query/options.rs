@@ -86,6 +86,11 @@ impl<'input> QueryOperationOptions {
             QueryOperationOptions::Title(ros) => {
                 Box::new(move |(i, _, _): (&Item, usize, &Feed)| -> bool {
                     match &ros {
+                        RangeOrSet::Range(range) => {
+                            if i.title().unwrap().contains(&range.start) {
+                                return true;
+                            }
+                        }
                         RangeOrSet::Set(set) => {
                             for value in set.contents.iter() {
                                 if i.title().unwrap().contains(&value.start) {
@@ -93,7 +98,6 @@ impl<'input> QueryOperationOptions {
                                 }
                             }
                         }
-                        _ => unreachable!(),
                     }
 
                     false
@@ -102,6 +106,11 @@ impl<'input> QueryOperationOptions {
             QueryOperationOptions::Description(ros) => {
                 Box::new(move |(i, _, _): (&Item, usize, &Feed)| -> bool {
                     match &ros {
+                        RangeOrSet::Range(range) => {
+                            if i.description().unwrap().contains(&range.start) {
+                                return true;
+                            }
+                        }
                         RangeOrSet::Set(set) => {
                             for value in set.contents.iter() {
                                 if i.description().unwrap().contains(&value.start) {
@@ -109,7 +118,6 @@ impl<'input> QueryOperationOptions {
                                 }
                             }
                         }
-                        _ => unreachable!(),
                     }
 
                     false
