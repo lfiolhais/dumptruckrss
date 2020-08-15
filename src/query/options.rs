@@ -21,6 +21,31 @@ impl<'input> QueryOperationOptions {
     pub fn build_func(self) -> QueryOp<'input> {
         let func: QueryOp = match self {
             QueryOperationOptions::Date(ros) => {
+                let func: Box<dyn Fn(NaiveDate) -> bool + Send + Sync> = match ros {
+                    RangeOrSet::Range(range) => {
+                        if let Some(end) = range.end {
+                            Box::new(move |date: NaiveDate| -> bool {
+                                date >= range.start && date <= end
+                            })
+                        } else {
+                            Box::new(move |date: NaiveDate| -> bool { date == range.start })
+                        }
+                    }
+                    RangeOrSet::Set(set) => Box::new(move |date: NaiveDate| -> bool {
+                        for range in set.contents.iter() {
+                            if let Some(end) = range.end {
+                                if date >= range.start && date <= end {
+                                    return true;
+                                }
+                            } else if date == range.start {
+                                return true;
+                            }
+                        }
+
+                        false
+                    }),
+                };
+
                 Box::new(move |(i, _, _): (&Item, usize, &Feed)| -> bool {
                     let item_date = i.pub_date().unwrap();
 
@@ -32,56 +57,34 @@ impl<'input> QueryOperationOptions {
                         }
                     };
 
-                    match &ros {
-                        RangeOrSet::Range(range) => {
-                            if let Some(end) = range.end {
-                                date >= range.start && date <= end
-                            } else {
-                                date == range.start
-                            }
-                        }
-                        RangeOrSet::Set(set) => {
-                            for range in set.contents.iter() {
-                                if let Some(end) = range.end {
-                                    if date >= range.start && date <= end {
-                                        return true;
-                                    }
-                                } else if date == range.start {
-                                    return true;
-                                }
-                            }
-
-                            false
-                        }
-                    }
+                    func(date)
                 })
             }
             QueryOperationOptions::Number(ros) => {
-                Box::new(move |(_, n, _): (&Item, usize, &Feed)| -> bool {
-                    let n = n as u64;
-                    match &ros {
-                        RangeOrSet::Range(range) => {
-                            if let Some(end) = range.end {
-                                n >= range.start && n <= end
-                            } else {
-                                n == range.start
-                            }
-                        }
-                        RangeOrSet::Set(set) => {
-                            for range in set.contents.iter() {
-                                if let Some(end) = range.end {
-                                    if n >= range.start && n <= end {
-                                        return true;
-                                    }
-                                } else if n == range.start {
-                                    return true;
-                                }
-                            }
-
-                            false
+                let func: Box<dyn Fn(u64) -> bool + Send + Sync> = match ros {
+                    RangeOrSet::Range(range) => {
+                        if let Some(end) = range.end {
+                            Box::new(move |n: u64| -> bool { n >= range.start && n <= end })
+                        } else {
+                            Box::new(move |n: u64| -> bool { n == range.start })
                         }
                     }
-                })
+                    RangeOrSet::Set(set) => Box::new(move |n: u64| -> bool {
+                        for range in set.contents.iter() {
+                            if let Some(end) = range.end {
+                                if n >= range.start && n <= end {
+                                    return true;
+                                }
+                            } else if n == range.start {
+                                return true;
+                            }
+                        }
+
+                        false
+                    }),
+                };
+
+                Box::new(move |(_, n, _): (&Item, usize, &Feed)| -> bool { func(n as u64) })
             }
             QueryOperationOptions::Title(ros) => {
                 Box::new(move |(i, _, _): (&Item, usize, &Feed)| -> bool {
