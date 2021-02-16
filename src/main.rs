@@ -108,7 +108,8 @@ async fn main() -> Result<(), Box<RssDumpError>> {
 
     // Access feed
     let channel = if matches.value_of("url").is_some() {
-        Channel::from_url(rss_feed)?
+        let content = reqwest::get(rss_feed).await?.bytes().await?;
+        Channel::read_from(&content[..])?
     } else {
         let file = std::fs::File::open(rss_feed)?;
         Channel::read_from(BufReader::new(file))?

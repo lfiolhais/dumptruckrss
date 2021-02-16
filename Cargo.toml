@@ -3,18 +3,28 @@ name = "dumptruckrss"
 version = "0.1.0"
 authors = ["Luís Fiolhais <luis.azenhas.fiolhais@tecnico.ulisboa.pt>"]
 edition = "2018"
+license = "GPL-3"
+readme = "README.md"
+description = "Dump your favorite RSS feeds into your hard drive."
+repository = "https://github.com/lfiolhais/dumptruckrss"
+keywords = [
+	"rss",
+	"cli",
+	"dump",
+]
+categories = ["command-line-interface", "rss", "backup"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rss = { version = "1.9.0", features = [ "from_url" ] }
+rss = "1.10.0"
 clap = "2.33.1"
-reqwest = { version = "0.10.6", features = [ "stream" ] }
-tokio = { version = "0.2", features = ["full"] }
-tokio-util = { version = "~0.3.0", features = ["compat"] }
+reqwest = { version = "0.11.0", features = [ "stream" ] }
+tokio = { version = "1.2.0", features = ["full"] }
+tokio-util = { version = "0.6.3", features = ["compat"] }
 futures = "0.3"
 fs2 = "0.4.3"
-env_logger = "0.7.1"
+env_logger = "0.8.3"
 log = "0.4.0"
 pbr = "1.0.3"
 chrono = "0.4.12"

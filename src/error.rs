@@ -13,6 +13,7 @@ pub enum RssDumpError {
     OutputDirIsNotReadable(PathBuf),
     OutputDirIsNotWritable(PathBuf),
     Query(QueryError),
+    Reqwest(reqwest::Error),
 }
 
 impl std::error::Error for RssDumpError {}
@@ -50,6 +51,7 @@ impl fmt::Display for RssDumpError {
                 o.display()
             )?,
             RssDumpError::Query(e) => writeln!(f, "Query Error: {}", e)?,
+            RssDumpError::Reqwest(e) => writeln!(f, "Reqwest Error: {}", e)?,
         }
 
         Ok(())
@@ -97,5 +99,16 @@ impl From<QueryError> for RssDumpError {
 impl From<QueryError> for Box<RssDumpError> {
     fn from(error: QueryError) -> Self {
         Box::new(RssDumpError::Query(error))
+    }
+}
+
+impl From<reqwest::Error> for RssDumpError {
+    fn from(error: reqwest::Error) -> Self {
+        RssDumpError::Reqwest(error)
+    }
+}
+impl From<reqwest::Error> for Box<RssDumpError> {
+    fn from(error: reqwest::Error) -> Self {
+        Box::new(RssDumpError::Reqwest(error))
     }
 }
