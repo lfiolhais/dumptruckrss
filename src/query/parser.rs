@@ -5,9 +5,9 @@ pub trait Parser<T>
 where
     T: Clone + Eq + std::hash::Hash,
 {
-    /// Parse the numeric option present in the query.
-    /// A numeric query is of the form: "number:[xx:yy]" (range), "number:xx" (scalar),
-    /// or "number:{xx,[zz:yy],ww}" (set).
+    /// Parse the T option present in the query.
+    /// A T query is of the form: "T:[xx:yy]" (range), "T:xx" (scalar),
+    /// or "T:{xx,[zz:yy],ww}" (set).
     fn parse(input: &str) -> Result<RangeOrSet<T>, ParserError<T>> {
         let input = input.trim();
 
