@@ -1,3 +1,7 @@
+#![deny(clippy::all)]
+#![deny(clippy::pedantic)]
+#![deny(clippy::nursery)]
+
 #[macro_use]
 extern crate log;
 
@@ -145,13 +149,16 @@ async fn main() -> Result<(), Box<RssDumpError>> {
     let query_ops: Vec<QueryOp> = if let Some(query_str) = matches.value_of("query") {
         let query = Query::new(query_str)?;
         let queries = vec![query];
-        queries.into_iter().map(|q| q.build_query_op()).collect()
+        queries
+            .into_iter()
+            .map(dumptruckrss::query::Query::build_query_op)
+            .collect()
     } else {
         println!("No query provided. Selecting latest item in feed");
         let query = Query::new("latest")?;
         vec![query]
             .into_iter()
-            .map(|q| q.build_query_op())
+            .map(dumptruckrss::query::Query::build_query_op)
             .collect()
     };
 
@@ -192,14 +199,13 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 required: feed.total_feed_size(),
                 available: available_space_in_output,
             }));
-        } else {
-            info!(
-                "Enough space available to store contents.\nRequired: {} ({}GiB)\nAvailable: {} ({}GiB)",
-                feed.total_feed_size(), feed.total_feed_size() / (1<<30), available_space_in_output, available_space_in_output / (1<<30)
-            );
         }
+        info!(
+            "Enough space available to store contents.\nRequired: {} ({}GiB)\nAvailable: {} ({}GiB)",
+            feed.total_feed_size(), feed.total_feed_size() / (1<<30), available_space_in_output, available_space_in_output / (1<<30)
+        );
 
-        let mut loops = 0usize;
+        let mut loops = 0_usize;
         let not_done;
 
         loop {
@@ -241,7 +247,12 @@ async fn main() -> Result<(), Box<RssDumpError>> {
     if matches.subcommand_matches("check").is_some() {
         let download_list = feed.build_list_from_query(&query_ops)?;
 
-        if !download_list.is_empty() {
+        if download_list.is_empty() {
+            println!(
+                "Didn't find any matches with query: {}",
+                matches.value_of("query").unwrap()
+            );
+        } else {
             println!(
                 "In directory {}. The following files match the query:",
                 config.get_output_display()
@@ -269,11 +280,6 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                     "".to_string()
                 }
             )
-        } else {
-            println!(
-                "Didn't find any matches with query: {}",
-                matches.value_of("query").unwrap()
-            );
         }
     }
 

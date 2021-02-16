@@ -5,7 +5,6 @@ use chrono::NaiveDate;
 use std::cmp::Ord;
 use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::iter::FromIterator;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub struct Range<T>
@@ -116,7 +115,7 @@ impl Parser<String> for RangeOrSet<String> {
             return Err(ParserError::EmptySetElement(input.to_owned()));
         }
 
-        let set = HashSet::from_iter(list_of_strs.into_iter());
+        let set: HashSet<_> = list_of_strs.into_iter().collect();
         Ok(RangeOrSet::Set(Set { contents: set }))
     }
 }
@@ -303,14 +302,14 @@ impl Parser<u64> for RangeOrSet<u64> {
         }
 
         let mut eviction_ids = eviction_ids.iter().copied().collect::<Vec<usize>>();
-        eviction_ids.sort();
+        eviction_ids.sort_unstable();
         eviction_ids.reverse();
 
         for evict_index in eviction_ids {
             numbers.remove(evict_index);
         }
 
-        let set = HashSet::from_iter(numbers.iter().map(|n| *n));
+        let set: HashSet<_> = numbers.iter().copied().collect();
         Ok(RangeOrSet::Set(Set { contents: set }))
     }
 }
@@ -498,14 +497,14 @@ impl Parser<NaiveDate> for RangeOrSet<NaiveDate> {
         }
 
         let mut eviction_ids = eviction_ids.iter().copied().collect::<Vec<usize>>();
-        eviction_ids.sort();
+        eviction_ids.sort_unstable();
         eviction_ids.reverse();
 
         for evict_index in eviction_ids {
             numbers.remove(evict_index);
         }
 
-        let set = HashSet::from_iter(numbers.iter().map(|n| *n));
+        let set: HashSet<_> = numbers.iter().copied().collect();
         Ok(RangeOrSet::Set(Set { contents: set }))
     }
 }

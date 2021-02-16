@@ -116,7 +116,7 @@ impl<'config> Feed<'config> {
                     epi.upgrade()
                         .unwrap()
                         .title()
-                        .unwrap_or_else(|| "Boilerplate Episode Title"),
+                        .unwrap_or("Boilerplate Episode Title"),
                 );
 
                 // Perform download
