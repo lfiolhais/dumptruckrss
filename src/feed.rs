@@ -17,8 +17,7 @@ use tokio_util::compat::FuturesAsyncReadCompatExt;
 #[derive(Debug)]
 pub struct Feed<'config> {
     title: String,
-    full_download_list: Vec<(Arc<rss::Item>, u64)>,
-    total_size: u64,
+    full_download_list: Vec<Arc<rss::Item>>,
     config: &'config DumpConfig<'config>,
 }
 
@@ -27,41 +26,13 @@ impl<'config> Feed<'config> {
         orig_channel: rss::Channel,
         config: &'config DumpConfig<'config>,
     ) -> Feed<'config> {
-        let mut sizes_vec: Vec<(usize, u64)> = vec![];
-
-        while orig_channel.items().len() - sizes_vec.len() > 0 {
-            let buffer: Vec<(usize, u64)> = stream::iter(orig_channel.items().iter().enumerate())
-                .map(|(i, item): (usize, &rss::Item)| async move {
-                    match Self::get_content_length(item.enclosure().unwrap()).await {
-                        Ok(l) => (i, l),
-                        Err(_) => (i, 0),
-                    }
-                })
-                .buffer_unordered(config.get_n_downloads())
-                .collect()
-                .await;
-
-            let mut buffer = buffer
-                .iter()
-                .filter(|(_, size)| *size != 0)
-                .map(|(i, size)| (*i, *size))
-                .collect();
-            sizes_vec.append(&mut buffer);
-        }
-
-        sizes_vec.sort_by_key(|(i, _)| *i);
-
-        let total_size = sizes_vec.iter().map(|(_, size)| size).sum::<u64>();
-
         Self {
             title: orig_channel.title().to_owned(),
             full_download_list: orig_channel
                 .items()
                 .iter()
-                .zip(sizes_vec)
-                .map(|(item, (_, size))| (Arc::new(item.clone()), size))
+                .map(|item| Arc::new(item.clone()))
                 .collect(),
-            total_size,
             config,
         }
     }
@@ -81,18 +52,18 @@ impl<'config> Feed<'config> {
     pub fn build_list_from_query<'a>(
         &mut self,
         queries: &[QueryOp<'a>],
-    ) -> Result<Vec<(Weak<rss::Item>, u64)>, Box<RssDumpError>> {
+    ) -> Result<Vec<Weak<rss::Item>>, Box<RssDumpError>> {
         Ok(self
             .full_download_list
             .par_iter()
             .enumerate()
-            .filter(|(i, (item, _))| {
+            .filter(|(i, item)| {
                 queries
                     .iter()
                     .map(|func| func((item, *i, self)))
                     .fold(true, |res, query_result| res & query_result)
             })
-            .map(|(_, (item, size))| (Arc::downgrade(&item), *size))
+            .map(|(_, item)| Arc::downgrade(item))
             .collect())
     }
 
@@ -183,10 +154,6 @@ impl<'config> Feed<'config> {
 
     pub fn total_items(&self) -> usize {
         self.full_download_list.len()
-    }
-
-    pub fn total_feed_size(&self) -> u64 {
-        self.total_size
     }
 
     pub fn get_config_output(&self) -> &Path {

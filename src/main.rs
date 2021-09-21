@@ -17,6 +17,7 @@ use std::io::BufReader;
 use std::path::PathBuf;
 use tokio::fs;
 
+#[allow(clippy::too_many_lines)]
 #[tokio::main]
 async fn main() -> Result<(), Box<RssDumpError>> {
     let matches = App::new(crate_name!())
