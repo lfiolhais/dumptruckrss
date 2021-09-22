@@ -137,9 +137,9 @@ impl<'config> Feed<'config> {
         pb_main.finish_with_message("Downloads Complete!");
 
         if failed_downs.lock().unwrap().len() > 0 {
-            error!("{} Failed Downloads", failed_downs.lock().unwrap().len());
+            info!("{} Failed Downloads", failed_downs.lock().unwrap().len());
             for (failed_item, _, error) in failed_downs.lock().unwrap().iter() {
-                error!(
+                info!(
                     "\tURL: {:?}; Error: {:?}",
                     failed_item.upgrade().unwrap().enclosure().unwrap().url(),
                     error
