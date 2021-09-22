@@ -195,27 +195,31 @@ async fn main() -> Result<(), Box<RssDumpError>> {
         loop {
             let failed_downs = feed.download_items(&download_list).await;
 
-            // Build new download list
-            let failed_items: Vec<&PathBuf> =
-                failed_downs.iter().map(|(_, path, _)| path).collect();
-            if !failed_items.is_empty() {
-                println!(
-                    "{} Downloads failed. Retrying with failed list",
-                    failed_items.len()
-                );
-            }
+            let has_failed_downs = {
+                // Build new download list
+                let failed_items: Vec<&PathBuf> =
+                    failed_downs.iter().map(|(_, path, _)| path).collect();
+                if !failed_items.is_empty() {
+                    println!(
+                        "{} Downloads failed. Retrying with failed list",
+                        failed_items.len()
+                    );
+                }
 
-            // Delete failed downloads, if they exist
-            for item_to_delete in &failed_items {
-                info!("Deleting {:?}", item_to_delete);
-                fs::remove_file(item_to_delete).await?;
-            }
+                // Delete failed downloads, if they exist
+                for item_to_delete in &failed_items {
+                    info!("Deleting {:?}", item_to_delete);
+                    fs::remove_file(item_to_delete).await?;
+                }
 
-            feed.build_list_from_query(&query_ops)?;
+                failed_items.is_empty()
+            };
+
+            download_list = failed_downs.into_iter().map(|(item, _, _)| item).collect();
             loops += 1;
 
-            if failed_items.is_empty() || loops >= 10 {
-                not_done = !failed_items.is_empty();
+            if has_failed_downs || loops >= 10 {
+                not_done = !has_failed_downs;
                 break;
             }
         }
