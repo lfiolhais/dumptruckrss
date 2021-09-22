@@ -30,7 +30,7 @@ dumptruckrss -u FEED -o FOLDER -q 'title:cheese delight' download
 ```
 Check the help flag (`-h`) for more options on the description and title queries.
 
-To download all episodes 1 to through 20.
+To download episodes 1 to 20.
 ```
 dumptruckrss -u FEED -o FOLDER -q number:[1-20] download
 ```
