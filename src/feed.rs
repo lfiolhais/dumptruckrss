@@ -119,7 +119,9 @@ impl<'config> Feed<'config> {
                     {
                         Ok(_) => {
                             local_pb_main.inc(1);
-                            std::thread::sleep(std::time::Duration::from_millis(300));
+                            std::thread::sleep(std::time::Duration::from_millis(
+                                self.config.timeout as u64,
+                            ));
                         }
                         Err(e) => {
                             failed_downs
@@ -191,12 +193,14 @@ impl<'config> Feed<'config> {
                         "Try {} of {}. Retrying in {}ms! Unexpected server response: {} ({})",
                         retry_counter,
                         tries,
-                        retry_counter * 300,
+                        retry_counter * self.config.timeout,
                         status,
                         name
                     ));
                     retry_counter += 1;
-                    std::thread::sleep(std::time::Duration::from_millis(retry_counter * 300));
+                    std::thread::sleep(std::time::Duration::from_millis(
+                        (retry_counter * self.config.timeout) as u64,
+                    ));
                     if retry_counter > tries {
                         return Err(Box::new(futures::io::Error::new(
                             futures::io::ErrorKind::Other,

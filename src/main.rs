@@ -51,6 +51,16 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 .long("ndownloads")
                 .value_name("NDOWNLOADS")
                 .help("Maximum number of concurrent downloads")
+                .default_value("1")
+                .takes_value(true),
+        )
+        .arg(
+            Arg::with_name("timeout")
+                .short("t")
+                .long("timeout")
+                .value_name("TIMEOUT")
+                .help("Timeout between failures in ms")
+                .default_value("300")
                 .takes_value(true),
         )
         .arg(
@@ -120,11 +130,21 @@ async fn main() -> Result<(), Box<RssDumpError>> {
         info!("Downloading {} items concurrently", n_downloads);
         n_downloads.parse()?
     } else {
-        info!("Downloading 1 item at a time");
-        1
+        unreachable!();
     };
 
-    let config = DumpConfig::new(matches.value_of("output").unwrap(), n_downloads, rss_feed);
+    let timeout: usize = if let Some(timeout) = matches.value_of("timeout") {
+        timeout.parse()?
+    } else {
+        unreachable!();
+    };
+
+    let config = DumpConfig::new(
+        matches.value_of("output").unwrap(),
+        n_downloads,
+        rss_feed,
+        timeout,
+    );
 
     info!("Checking {}...", config.get_output_display());
     if config.does_output_dir_exist() {

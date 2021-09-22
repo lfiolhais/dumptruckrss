@@ -6,16 +6,23 @@ use std::path::{self, Path, PathBuf};
 pub struct DumpConfig<'input_life> {
     pub(super) output: PathBuf,
     pub(super) n_downloads: usize,
+    pub(super) timeout: usize,
     feed: &'input_life str,
 }
 
 impl<'input_life> DumpConfig<'input_life> {
-    pub fn new(output_path: &str, n_downloads: usize, feed: &'input_life str) -> Self {
+    pub fn new(
+        output_path: &str,
+        n_downloads: usize,
+        feed: &'input_life str,
+        timeout: usize,
+    ) -> Self {
         let output = PathBuf::from(output_path);
         DumpConfig {
             output,
             n_downloads,
             feed,
+            timeout,
         }
     }
 
