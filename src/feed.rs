@@ -69,7 +69,7 @@ impl<'config> Feed<'config> {
 
     pub async fn download_items(
         &self,
-        download_list: &[(Weak<rss::Item>, u64)],
+        download_list: &[Weak<rss::Item>],
     ) -> Vec<(Weak<rss::Item>, PathBuf, Box<dyn std::error::Error>)> {
         let mut progress_bar = ProgressBar::new(download_list.len() as u64);
         progress_bar.tick_format("\\|/-");
@@ -78,16 +78,18 @@ impl<'config> Feed<'config> {
         let failed_downs = Arc::new(Mutex::new(vec![]));
 
         stream::iter(download_list.iter().rev())
-            .for_each_concurrent(self.config.n_downloads, |(epi, _)| {
-                progress_bar.inc();
+            .for_each_concurrent(self.config.n_downloads, |epi| {
+                let name = epi
+                    .upgrade()
+                    .unwrap()
+                    .title()
+                    .unwrap_or("Boilerplate Episode Title")
+                    .to_owned();
 
                 let new_file = create_file_path(
                     &self.config.output,
                     epi.upgrade().unwrap().enclosure().unwrap().mime_type(),
-                    epi.upgrade()
-                        .unwrap()
-                        .title()
-                        .unwrap_or("Boilerplate Episode Title"),
+                    &name,
                 );
 
                 // Perform download

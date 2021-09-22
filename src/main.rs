@@ -173,12 +173,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             feed.title()
         );
 
-        info!(
-            "{} contains {} items ({}GiB)",
-            feed.title(),
-            feed.total_items(),
-            feed.total_feed_size() / (1 << 30)
-        );
+        info!("{} contains {} items", feed.title(), feed.total_items(),);
 
         let is_write = config.is_output_dir_write()?;
         if is_write {
@@ -192,20 +187,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             )));
         }
 
-        let download_list = feed.build_list_from_query(&query_ops)?;
-
-        // Check available space
-        let available_space_in_output = fs2::available_space(config.get_output())?;
-        if available_space_in_output < feed.total_feed_size() {
-            return Err(Box::new(RssDumpError::NotEnoughFreeSpace {
-                required: feed.total_feed_size(),
-                available: available_space_in_output,
-            }));
-        }
-        info!(
-            "Enough space available to store contents.\nRequired: {} ({}GiB)\nAvailable: {} ({}GiB)",
-            feed.total_feed_size(), feed.total_feed_size() / (1<<30), available_space_in_output, available_space_in_output / (1<<30)
-        );
+        let mut download_list = feed.build_list_from_query(&query_ops)?;
 
         let mut loops = 0_usize;
         let not_done;
@@ -260,12 +242,11 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 config.get_output_display()
             );
 
-            for (item, size) in download_list {
+            for item in download_list {
                 let item_access = item.upgrade().unwrap();
                 println!(
-                    "\t{}\n\t\tSize: {}MiB\n\t\tURL: {}\n\t\tDate: {}",
+                    "\t{}\n\t\tURL: {}\n\t\tDate: {}",
                     item_access.title().unwrap(),
-                    size / (1 << 20),
                     item_access.enclosure().unwrap().url(),
                     item_access.pub_date().unwrap()
                 );
@@ -281,7 +262,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 } else {
                     "".to_string()
                 }
-            )
+            );
         }
     }
 
