@@ -94,6 +94,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                         'latest' downloads the most recent item or 'latest:N' to download the N most recent items",
                         RANGE_DELIMITER, RANGE_DELIMITER),
                 )
+                .default_value("notexists")
                 .takes_value(true),
         )
         .subcommand(
@@ -176,12 +177,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             .map(dumptruckrss::query::Query::build_query_op)
             .collect()
     } else {
-        println!("No query provided. Selecting latest item in feed");
-        let query = Query::new("latest")?;
-        vec![query]
-            .into_iter()
-            .map(dumptruckrss::query::Query::build_query_op)
-            .collect()
+        unreachable!();
     };
 
     let mut feed = Feed::new(channel, &config).await;
