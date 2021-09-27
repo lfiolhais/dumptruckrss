@@ -257,10 +257,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 matches.value_of("query").unwrap()
             );
         } else {
-            println!(
-                "In directory {}. The following files match the query:",
-                config.get_output_display()
-            );
+            println!("The following files match the query:");
 
             for item in download_list {
                 let item_access = item.upgrade().unwrap();
@@ -273,7 +270,7 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             }
 
             println!(
-                "\nTo download these files run:\n\trss-dumper -u {} -o {} -d {}{} download",
+                "\nTo download these files run:\n\tdumptruckrss -u {} -o {} -d {}{} download",
                 config.get_feed(),
                 config.get_output_display(),
                 config.get_n_downloads(),
