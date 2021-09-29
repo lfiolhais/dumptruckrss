@@ -49,26 +49,6 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                 .args(&["url", "file"])
                 .required(true),
         )
-        // TODO: move ndownloads to download subcommand
-        .arg(
-            Arg::with_name("ndownloads")
-                .short("d")
-                .long("ndownloads")
-                .value_name("NDOWNLOADS")
-                .help("Maximum number of concurrent downloads")
-                .default_value("1")
-                .takes_value(true),
-        )
-        // TODO: move timeout to download subcommand
-        .arg(
-            Arg::with_name("timeout")
-                .short("t")
-                .long("timeout")
-                .value_name("TIMEOUT")
-                .help("Timeout between failures in ms")
-                .default_value("300")
-                .takes_value(true),
-        )
         // TODO: add support for multiple queries
         .arg(
             Arg::with_name("query")
@@ -106,6 +86,24 @@ async fn main() -> Result<(), Box<RssDumpError>> {
                         .help("Output location to download contents")
                         .takes_value(true)
                         .required(true),
+                )
+                .arg(
+                    Arg::with_name("ndownloads")
+                        .short("d")
+                        .long("ndownloads")
+                        .value_name("NDOWNLOADS")
+                        .help("Maximum number of concurrent downloads")
+                        .default_value("1")
+                        .takes_value(true),
+                )
+                .arg(
+                    Arg::with_name("timeout")
+                        .short("t")
+                        .long("timeout")
+                        .value_name("TIMEOUT")
+                        .help("Timeout between failures in ms")
+                        .default_value("300")
+                        .takes_value(true),
                 )
         )
         .subcommand(
@@ -155,19 +153,6 @@ async fn main() -> Result<(), Box<RssDumpError>> {
         Channel::read_from(BufReader::new(file))?
     };
 
-    let n_downloads: usize = if let Some(n_downloads) = matches.value_of("ndownloads") {
-        info!("Downloading {} items concurrently", n_downloads);
-        n_downloads.parse()?
-    } else {
-        unreachable!();
-    };
-
-    let timeout: usize = if let Some(timeout) = matches.value_of("timeout") {
-        timeout.parse()?
-    } else {
-        unreachable!();
-    };
-
     let query_ops: Vec<QueryOp> = if let Some(query_str) = matches.value_of("query") {
         let query = Query::new(query_str)?;
         let queries = vec![query];
@@ -181,6 +166,19 @@ async fn main() -> Result<(), Box<RssDumpError>> {
 
     // Download Subcommand
     if let Some(matches) = matches.subcommand_matches("download") {
+        let n_downloads: usize = if let Some(n_downloads) = matches.value_of("ndownloads") {
+            info!("Downloading {} items concurrently", n_downloads);
+            n_downloads.parse()?
+        } else {
+            unreachable!();
+        };
+
+        let timeout: usize = if let Some(timeout) = matches.value_of("timeout") {
+            timeout.parse()?
+        } else {
+            unreachable!();
+        };
+
         let config = DumpConfig::new_output_is_dir(
             matches.value_of("output").unwrap(),
             n_downloads,
@@ -256,12 +254,8 @@ async fn main() -> Result<(), Box<RssDumpError>> {
     }
     // Check Subcommand
     else if matches.subcommand_matches("check").is_some() {
-        let config = DumpConfig::new_output_is_dir(
-            matches.value_of("output").unwrap(),
-            n_downloads,
-            rss_feed,
-            timeout,
-        );
+        let config =
+            DumpConfig::new_output_is_dir(matches.value_of("output").unwrap(), 0, rss_feed, 0);
         let mut feed = Feed::new(channel, &config).await;
 
         let download_list = feed.build_list_from_query(&query_ops)?;
@@ -285,26 +279,21 @@ async fn main() -> Result<(), Box<RssDumpError>> {
             }
 
             println!(
-                "\nTo download these files run:\n\tdumptruckrss -u {} -o {} -d {}{} download",
+                "\nTo download these files run:\n\tdumptruckrss -u {}{} download -o {}",
                 config.get_feed(),
-                config.get_output_display(),
-                config.get_n_downloads(),
                 if !query_ops.is_empty() && matches.value_of("query").is_some() {
                     format!(" -q '{}'", matches.value_of("query").unwrap())
                 } else {
                     "".to_string()
-                }
+                },
+                config.get_output_display(),
             );
         }
     }
     // create Subcommand
     else if let Some(matches) = matches.subcommand_matches("create") {
-        let config = DumpConfig::new_output_is_file(
-            matches.value_of("output").unwrap(),
-            n_downloads,
-            rss_feed,
-            timeout,
-        )?;
+        let config =
+            DumpConfig::new_output_is_file(matches.value_of("output").unwrap(), 0, rss_feed, 0)?;
         let mut feed = Feed::new(channel, &config).await;
 
         // Create directory if necessary
