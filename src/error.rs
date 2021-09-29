@@ -1,8 +1,9 @@
-use std::fmt;
-use std::path::PathBuf;
 use tokio::io as tokio_io;
 
 use super::query::error::QueryError;
+
+use std::fmt;
+use std::path::PathBuf;
 
 #[derive(Debug)]
 pub enum RssDumpError {
@@ -10,10 +11,12 @@ pub enum RssDumpError {
     NotEnoughFreeSpace { required: u64, available: u64 },
     Rss(rss::Error),
     ParseInt(std::num::ParseIntError),
+    OutputIsDirectory(PathBuf),
     OutputDirIsNotReadable(PathBuf),
     OutputDirIsNotWritable(PathBuf),
     Query(QueryError),
     Reqwest(reqwest::Error),
+    RssChannelBuilder(String),
 }
 
 impl std::error::Error for RssDumpError {}
@@ -40,6 +43,11 @@ impl fmt::Display for RssDumpError {
             }
             RssDumpError::Rss(e) => writeln!(f, "Rss Error: {}", e)?,
             RssDumpError::ParseInt(e) => writeln!(f, "ParseInt Error: {}", e)?,
+            RssDumpError::OutputIsDirectory(o) => writeln!(
+                f,
+                "Output File Error: {} is a directory. Expected a file.",
+                o.display()
+            )?,
             RssDumpError::OutputDirIsNotReadable(o) => writeln!(
                 f,
                 "Output Directory Error: {} is not readable by the current user",
@@ -52,6 +60,7 @@ impl fmt::Display for RssDumpError {
             )?,
             RssDumpError::Query(e) => writeln!(f, "Query Error: {}", e)?,
             RssDumpError::Reqwest(e) => writeln!(f, "Reqwest Error: {}", e)?,
+            RssDumpError::RssChannelBuilder(e) => writeln!(f, "RssChannelBuilder Error: {}", e)?,
         }
 
         Ok(())
@@ -110,5 +119,16 @@ impl From<reqwest::Error> for RssDumpError {
 impl From<reqwest::Error> for Box<RssDumpError> {
     fn from(error: reqwest::Error) -> Self {
         Box::new(RssDumpError::Reqwest(error))
+    }
+}
+
+impl From<String> for RssDumpError {
+    fn from(error: String) -> Self {
+        RssDumpError::RssChannelBuilder(error)
+    }
+}
+impl From<String> for Box<RssDumpError> {
+    fn from(error: String) -> Self {
+        Box::new(RssDumpError::RssChannelBuilder(error))
     }
 }

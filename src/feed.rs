@@ -1,8 +1,8 @@
 use super::config::DumpConfig;
 use super::error::RssDumpError;
 use super::query::QueryOp;
-
 use super::utils::create_file_path;
+
 use futures::stream::{self, StreamExt, TryStreamExt};
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use rayon::prelude::*;
@@ -22,6 +22,7 @@ pub struct Feed<'config> {
     title: String,
     full_download_list: Vec<Arc<rss::Item>>,
     config: &'config DumpConfig<'config>,
+    channel: rss::Channel,
 }
 
 impl<'config> Feed<'config> {
@@ -37,6 +38,7 @@ impl<'config> Feed<'config> {
                 .map(|item| Arc::new(item.clone()))
                 .collect(),
             config,
+            channel: orig_channel,
         }
     }
 
@@ -242,6 +244,34 @@ impl<'config> Feed<'config> {
 
     pub fn get_config_output(&self) -> &Path {
         self.config.get_output()
+    }
+
+    pub fn link(&self) -> &str {
+        self.channel.link()
+    }
+
+    pub fn description(&self) -> &str {
+        self.channel.description()
+    }
+
+    pub fn language(&self) -> Option<&str> {
+        self.channel.language()
+    }
+
+    pub fn copyright(&self) -> Option<&str> {
+        self.channel.copyright()
+    }
+
+    pub fn managing_editor(&self) -> Option<&str> {
+        self.channel.managing_editor()
+    }
+
+    pub fn pub_date(&self) -> Option<&str> {
+        self.channel.pub_date()
+    }
+
+    pub fn categories(&self) -> &[rss::Category] {
+        self.channel.categories()
     }
 }
 
